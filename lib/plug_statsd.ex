@@ -6,6 +6,7 @@ defmodule Plug.Statsd do
   @root_replacement "[root]"
   @metrics [{:timer, ["response_code", :generalized_http_status]}]
   @backend :ex_statsd
+  @tags []
 
   def init(opts) do
     Keyword.merge(default_options(), opts)
@@ -58,7 +59,8 @@ defmodule Plug.Statsd do
       dot_replacement: Application.get_env(:plug_statsd, :dot_replacement, @dot_replacement),
       root_replacement: Application.get_env(:plug_statsd, :root_replacement, @root_replacement),
       metrics: Application.get_env(:plug_statsd, :metrics, @metrics),
-      backend: Application.get_env(:plug_statsd, :backend, @backend)
+      backend: Application.get_env(:plug_statsd, :backend, @backend),
+      tags: Application.get_env(:plug_statsd, :tags, @tags)
     ]
   end
 
@@ -89,6 +91,19 @@ defmodule Plug.Statsd do
     element
   end
 
+  defp config_to_tags({module, function}, conn, opts)
+       when is_atom(module) and is_atom(function) do
+    apply(module, function, [conn, opts])
+  end
+
+  defp config_to_tags(element, conn, opts) when is_function(element, 2) do
+    apply(element, [conn, opts])
+  end
+
+  defp config_to_tags(element, _conn, _opts) when is_list(element) do
+    element
+  end
+
   defp send_metrics(conn, opts, elapsed) do
     opts
     |> Keyword.get(:metrics)
@@ -103,20 +118,23 @@ defmodule Plug.Statsd do
 
   defp send_metric({:timer, name_elements, sample_rate: rate}, conn, opts, elapsed) do
     name = metric_name(name_elements, conn, opts)
+    tags = config_to_tags(Keyword.get(opts, :tags), conn, opts)
 
-    backend(opts).timing(name, elapsed, rate)
+    backend(opts).timing(name, elapsed, rate, tags)
   end
 
   defp send_metric({:counter, name_elements, sample_rate: rate}, conn, opts, _elapsed) do
     name = metric_name(name_elements, conn, opts)
+    tags = config_to_tags(Keyword.get(opts, :tags), conn, opts)
 
-    backend(opts).increment(name, rate)
+    backend(opts).increment(name, rate, tags)
   end
 
   defp send_metric({:histogram, name_elements, sample_rate: rate}, conn, opts, elapsed) do
     name = metric_name(name_elements, conn, opts)
+    tags = config_to_tags(Keyword.get(opts, :tags), conn, opts)
 
-    backend(opts).histogram(name, elapsed, rate)
+    backend(opts).histogram(name, elapsed, rate, tags)
   end
 
   defp backend(opts) do
