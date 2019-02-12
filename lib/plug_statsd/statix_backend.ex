@@ -2,7 +2,7 @@ if Code.ensure_loaded?(Statix) do
   defmodule Plug.Statsd.StatixBackend do
     def increment(name, 1, tags) do
       IO.inspect(tags, label: "Debug tags")
-      increment(name, 1.0, tags: tags)
+      increment(name, 1.0, tags)
     end
 
     def increment(name, rate, tags) when is_float(rate) do
@@ -12,7 +12,7 @@ if Code.ensure_loaded?(Statix) do
 
     def timing(name, elapsed, 1, tags) do
       IO.inspect(tags, label: "Debug tags")
-      timing(name, elapsed, 1.0, tags: tags)
+      timing(name, elapsed, 1.0, tags)
     end
 
     def timing(name, elapsed, rate, tags) when is_float(rate) do
@@ -22,7 +22,7 @@ if Code.ensure_loaded?(Statix) do
 
     def histogram(name, elapsed, 1, tags) do
       IO.inspect(tags, label: "Debug tags")
-      histogram(name, elapsed, 1.0, tags: tags)
+      histogram(name, elapsed, 1.0, tags)
     end
 
     def histogram(name, elapsed, rate, tags) when is_float(rate) do
